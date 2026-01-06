@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1762693286112,
+    "title": "I want to make a React translate Web , How it,s Posible ?",
+    "content": "<div><h3><span style=\"color: var(--text-color); font-size: 16px;\">So&nbsp; first i'll go to Terminal and create a project.&nbsp;</span></h3><ul><li>npx create-react-translate-web&nbsp;</li><li>cd react-translate-web&nbsp;</li><li>npm start</li></ul></div><div><b>Using the translation library</b></div><div>There are popular libraries i know for translation in React.</div><div><ul><li>i18Next (with React i18Next)</li><li>react-intl</li><li>Google Translate Api or OpenAI (for dynamic translation)</li></ul></div><div><u>I am using i18Next. / bash</u></div><div><ul><li>npm install i18next</li></ul><h3><span style=\"font-size: 16px; color: var(--text-color);\"><i>Undrstand the structure.</i></span></h3><div><span style=\"font-size: 16px; color: var(--text-color);\"><i><br></i></span></div><div><span style=\"font-size: 16px; color: var(--text-color);\"><br></span></div><h3></h3></div>",
+    "type": "blog",
+    "link": null,
+    "blogLink": null,
+    "media": null,
+    "createdAt": "2025-11-09T13:01:26.112Z"
+  }
+]
