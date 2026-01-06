@@ -15,8 +15,8 @@ const PORT = process.env.PORT || 10000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
 // Fix __dirname (ESM)
 const __filename = fileURLToPath(import.meta.url);
@@ -39,7 +39,7 @@ const upload = multer({ storage });
 const POSTS_FILE = path.join(__dirname, "posts.json");
 const PROJECTS_FILE = path.join(__dirname, "projects.json");
 
-// Helper
+// Helper to safely load/create JSON files
 async function loadData(file) {
   if (!(await fs.pathExists(file))) {
     await fs.writeJson(file, []);
@@ -47,70 +47,87 @@ async function loadData(file) {
   return fs.readJson(file);
 }
 
-// ✅ HEALTH CHECK (VERY IMPORTANT)
+// =========================
+// ✅ HEALTH CHECK
+// =========================
 app.get("/", (_req, res) => {
   res.status(200).send("✅ Backend running successfully on Render");
 });
 
-// ---------------- POSTS ----------------
+// =========================
+// 🟢 POSTS ROUTES
+// =========================
 app.get("/posts", async (_req, res) => {
   const posts = await loadData(POSTS_FILE);
   res.json(posts);
 });
 
 app.post("/posts", upload.single("media"), async (req, res) => {
-  const { title, content } = req.body;
-  if (!title || !content) {
-    return res.status(400).json({ error: "Title and content required" });
+  try {
+    const { title, content } = req.body;
+    if (!title || !content)
+      return res.status(400).json({ error: "Title and content required" });
+
+    let mediaUrl = null;
+    if (req.file) mediaUrl = `/uploads/${req.file.filename}`;
+
+    const newPost = {
+      id: Date.now(),
+      title,
+      content,
+      media: mediaUrl,
+      createdAt: new Date().toISOString()
+    };
+
+    const posts = await loadData(POSTS_FILE);
+    posts.unshift(newPost);
+    await fs.writeJson(POSTS_FILE, posts, { spaces: 2 });
+
+    res.status(201).json(newPost);
+  } catch (err) {
+    console.error("❌ Error adding post:", err);
+    res.status(500).json({ error: "Failed to add post" });
   }
-
-  let mediaUrl = null;
-  if (req.file) mediaUrl = `/uploads/${req.file.filename}`;
-
-  const newPost = {
-    id: Date.now(),
-    title,
-    content,
-    media: mediaUrl,
-    createdAt: new Date().toISOString()
-  };
-
-  const posts = await loadData(POSTS_FILE);
-  posts.unshift(newPost);
-  await fs.writeJson(POSTS_FILE, posts, { spaces: 2 });
-
-  res.status(201).json(newPost);
 });
 
-// ---------------- PROJECTS ----------------
+// =========================
+// 🔵 PROJECT ROUTES
+// =========================
 app.get("/projects", async (_req, res) => {
   const projects = await loadData(PROJECTS_FILE);
   res.json(projects);
 });
 
 app.post("/projects", upload.single("media"), async (req, res) => {
-  const { title, link } = req.body;
-  if (!title) return res.status(400).json({ error: "Title required" });
+  try {
+    const { title, link } = req.body;
+    if (!title) return res.status(400).json({ error: "Title required" });
 
-  let mediaUrl = null;
-  if (req.file) mediaUrl = `/uploads/${req.file.filename}`;
+    let mediaUrl = null;
+    if (req.file) mediaUrl = `/uploads/${req.file.filename}`;
 
-  const newProject = {
-    id: Date.now(),
-    title,
-    link: link || null,
-    media: mediaUrl,
-    createdAt: new Date().toISOString()
-  };
+    const newProject = {
+      id: Date.now(),
+      title,
+      link: link || null,
+      media: mediaUrl,
+      createdAt: new Date().toISOString()
+    };
 
-  const projects = await loadData(PROJECTS_FILE);
-  projects.unshift(newProject);
-  await fs.writeJson(PROJECTS_FILE, projects, { spaces: 2 });
+    const projects = await loadData(PROJECTS_FILE);
+    projects.unshift(newProject);
+    await fs.writeJson(PROJECTS_FILE, projects, { spaces: 2 });
 
-  res.status(201).json(newProject);
+    res.status(201).json(newProject);
+  } catch (err) {
+    console.error("❌ Error adding project:", err);
+    res.status(500).json({ error: "Failed to add project" });
+  }
 });
 
-// 🔥 FINAL: START SERVER (THIS FIXES PORT SCAN)
+// =========================
+// 🔥 FINAL: START SERVER (Render-compatible)
+// =========================
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
